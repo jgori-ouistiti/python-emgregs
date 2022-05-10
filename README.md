@@ -4,9 +4,13 @@
 
 The EMG regression with and without flare are presented in [Gori et al. 2019](https://hal.archives-ouvertes.fr/hal-02191051/document) and [Li et al., in preparation](https://locallhost.com/) respectively.
 
-You can get this package from Pypi: python3 -m pip install emgregs
+You can get this package from Pypi: 
 
-The package is support for Python 3.8 and above
+```shell
+python3 -m pip install emgregs
+```
+
+The package is supported for Python 3.8 and above
 
 
 Example usage:
