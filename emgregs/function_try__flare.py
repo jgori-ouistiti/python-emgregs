@@ -17,7 +17,7 @@ import statsmodels.stats as sms
 import statsmodels.formula.api as smf
 
 
-import function_emg__reg
+from emgregs.function_emg__reg import func_emg__reg
 
 rng = numpy.random.default_rng(seed=123)
 
