@@ -1,3 +1,3 @@
-from emgregs.function_emg__reg import func_emg__reg, func_emg__reg_heterosked
-from emgregs.function_try__flare import fun_try__flare__reg
-from emgregs.function_simulation import sim__emg_reg, sim__emg_reg__heterosked
+from emgregs.emg_reg import func_emg_reg, func_emg_reg_heterosked
+from emgregs.flare_reg import fun_try_flare_reg
+from emgregs.simulation import sim_emg_reg, sim_emg_reg_heterosked

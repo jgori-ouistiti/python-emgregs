@@ -18,7 +18,7 @@ import statsmodels.formula.api as smf
 rng = numpy.random.default_rng(seed=123)
 
 
-def emg__neg_llh_heterosked(
+def emg_neg_llh_heterosked(
     emg_parameters: List[Union[npt.NDArray[Any], float, numpy.floating]],
     resid: Union[npt.NDArray[Any], float, numpy.floating],
     x: Union[npt.NDArray[Any], float, numpy.floating],
@@ -38,7 +38,7 @@ def emg__neg_llh_heterosked(
     return -numpy.sum(individual_likelihoods)
 
 
-def emg__neg_llh(
+def emg_neg_llh(
     emg_parameters: List[Union[npt.NDArray[Any], float, numpy.floating]],
     x: Union[npt.NDArray[Any], float, numpy.floating],
 ):
@@ -57,7 +57,7 @@ def emg__neg_llh(
     return -numpy.sum(individual_likelihoods)
 
 
-def emg__mle2(
+def emg_mle2(
     x: npt.NDArray[Any],
     lower: List[Union[npt.NDArray[Any], float, numpy.floating]] = None,
     upper: List[Union[npt.NDArray[Any], float, numpy.floating]] = None,
@@ -85,7 +85,7 @@ def emg__mle2(
 
     if not numpy.isfinite(
         start
-    ).all():  # more stringent than an isnan test since also discards infinite values
+    ).all():  # more stringent than an isnan test --> also discards infinite values
         start = [
             (lower[0] + upper[0]) / 2,
             (lower[1] + upper[1]) / 2,
@@ -93,7 +93,7 @@ def emg__mle2(
         ]
 
     res = spopt.minimize(
-        emg__neg_llh,
+        emg_neg_llh,
         start,
         args=(x,),
         method="L-BFGS-B",
@@ -108,7 +108,7 @@ def emg__mle2(
     return res
 
 
-def emg__mle2_heterosked(
+def emg_mle2_heterosked(
     resid: npt.NDArray[Any],
     x: npt.NDArray[Any],
     lower: List[Union[npt.NDArray[Any], float, numpy.floating]] = None,
@@ -149,7 +149,7 @@ def emg__mle2_heterosked(
         ] + [0 for i in range(x.shape[1] - 1)]
 
     res = spopt.minimize(
-        emg__neg_llh_heterosked,
+        emg_neg_llh_heterosked,
         start,
         args=(resid, x),
         method="L-BFGS-B",
@@ -170,7 +170,7 @@ def beta_log_fn_heterosked(beta, x, y, mu, sigma, expo_scale):
     y = y.reshape(
         -1,
     )
-    return emg__neg_llh_heterosked(
+    return emg_neg_llh_heterosked(
         [mu, sigma, *expo_scale], y - (x @ beta).squeeze(), x
     )
 
@@ -181,10 +181,11 @@ def beta_log_fn(beta, x, y, mu, sigma, k):
     y = y.reshape(
         -1,
     )
-    return emg__neg_llh([mu, sigma, k], y - (x @ beta).squeeze())
+
+    return emg_neg_llh([mu, sigma, k], y - (x @ beta).squeeze())
 
 
-def emg__reg(x, y, beta=None, sigma=None, k=None, maxit=10000, epsilon=0.0001):
+def emg_reg(x, y, beta=None, sigma=None, k=None, maxit=10000, epsilon=0.0001):
     N = y.shape[0]
     if beta is None:
         lm__out = sm.OLS(y, x)
@@ -219,7 +220,7 @@ def emg__reg(x, y, beta=None, sigma=None, k=None, maxit=10000, epsilon=0.0001):
         beta = result.x
         beta_list.append(beta)
 
-        out = emg__mle2(y - (x @ beta.reshape(-1, 1)).squeeze())
+        out = emg_mle2(y - (x @ beta.reshape(-1, 1)).squeeze())
         mu = 0
         sigma, k = out.x[1:]
 
@@ -230,18 +231,21 @@ def emg__reg(x, y, beta=None, sigma=None, k=None, maxit=10000, epsilon=0.0001):
 
     print(f"number of iterations={iter}")
     # TODO: should return number of observations and parameters as well to compute AIC and BIC easily
+
+    #### Warning: here ex is exponential parameter expressed in rate version (x * ex)
+
     return {
         "all.loglik": Q,
         "residual": y - (x @ beta.reshape(-1, 1)).squeeze(),
         "loglik": Q[iter],
         "beta": beta,
         "sigma": sigma,
-        "ex.rate": k,
+        "ex": k,
         "beta.list": beta_list,
     }
 
 
-def emg__reg_heterosked(
+def emg_reg_heterosked(
     x, y, beta=None, sigma=None, expo_scale=None, maxit=10000, epsilon=0.0001
 ):
     N = y.shape[0]
@@ -280,7 +284,7 @@ def emg__reg_heterosked(
         beta = result.x
         beta_list.append(beta)
 
-        out = emg__mle2_heterosked(y - (x @ beta.reshape(-1, 1)).squeeze(), x)
+        out = emg_mle2_heterosked(y - (x @ beta.reshape(-1, 1)).squeeze(), x)
         mu = 0
         sigma, *expo_scale = out.x[1:]
 
@@ -291,18 +295,20 @@ def emg__reg_heterosked(
 
     print(f"number of iterations={iter}")
     # TODO: should return number of observations and parameters as well to compute AIC and BIC easily
+
+    #### Warning: here ex is exponential parameter expressed in scale version (x/ex)
     return {
         "all.loglik": Q,
         "residual": y - (x @ beta.reshape(-1, 1)).squeeze(),
         "loglik": Q[iter],
         "beta": beta,
         "sigma": sigma,
-        "expo_scale": expo_scale,
+        "ex": expo_scale,
         "beta.list": beta_list,
     }
 
 
-def func_emg__reg_heterosked(
+def func_emg_reg_heterosked(
     x: npt.ArrayLike,
     y: npt.ArrayLike,
     intercept: Optional[bool] = False,
@@ -313,12 +319,12 @@ def func_emg__reg_heterosked(
 ):
     if not intercept:
         x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x), axis=1)
-    return emg__reg_heterosked(
+    return emg_reg_heterosked(
         x, y, beta=beta, sigma=sigma, expo_scale=expo_scale, **kwargs
     )
 
 
-def func_emg__reg(
+def func_emg_reg(
     x: npt.ArrayLike,
     y: npt.ArrayLike,
     intercept: Optional[bool] = False,
@@ -329,17 +335,22 @@ def func_emg__reg(
 ):
     if not intercept:
         x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x), axis=1)
-    return emg__reg(x, y, beta=beta, sigma=sigma, k=alpha, **kwargs)
+
+    k_passed = kwargs.pop("k", None)
+    k = k_passed if k_passed is not None else alpha
+
+    return emg_reg(x, y, beta=beta, sigma=sigma, k=k, **kwargs)
 
 
 if __name__ == "__main__":
-    import function_simulation as sim
+    import simulation as sim
 
-    N = 500
-    # data = sim.sim__emg_reg(n=N, sigma=1, alpha=0.1)
-    # regfit_emg = func_emg__reg(data["X"], data["Y"], maxit=10000)
-    data = sim.sim__emg_reg__heterosked(
-        xmin=1, xmax=7, n=500, beta=(0.3, 0.15), sigma=0.1, expo_scale=(0.1, 0.1)
+    N = 5000
+    data1 = sim.sim_emg_reg(
+        xmin=1, xmax=7, n=N, beta=(0.3, 0.15), sigma=0.5, alpha=0.01
     )
-    result_dict_heterosked = func_emg__reg_heterosked(data["X"], data["Y"], maxit=10000)
-    result_dict_homosked = func_emg__reg(data["X"], data["Y"], maxit=10000)
+    data2 = sim.sim_emg_reg_heterosked(
+        xmin=1, xmax=7, n=N, beta=(0.3, 0.15), sigma=0.1, expo_scale=(0.1, 0.1)
+    )
+    result_dict_homosked = func_emg_reg(data1["X"], data1["Y"], maxit=10000)
+    result_dict_heterosked = func_emg_reg_heterosked(data2["X"], data2["Y"], maxit=10000)

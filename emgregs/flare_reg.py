@@ -17,7 +17,6 @@ import statsmodels.stats as sms
 import statsmodels.formula.api as smf
 
 
-from emgregs.function_emg__reg import func_emg__reg
 
 rng = numpy.random.default_rng(seed=123)
 
@@ -73,7 +72,7 @@ def apply_column_sum(x):
     return numpy.sum(x, axis=0)
 
 
-def try__flare__ref(
+def try_flare_ref(
     y,
     x,
     k=None,
@@ -106,7 +105,6 @@ def try__flare__ref(
         k = numpy.array([k_one, k_two])[0]
 
     if beta is None:
-        print(y.shape, x.shape)
         lm__out = sm.OLS(y, x)
         beta = lm__out.fit().params
 
@@ -126,14 +124,15 @@ def try__flare__ref(
         alpha = numpy.abs(rng.normal(loc=a, size=(1,)))
 
     if emg:
-        try:
-            res = function_emg__reg.emg__reg(x, y, beta=beta, sigma=sigma, k=alpha)
-        except:  # Unsafe, list which exceptions should be caught here.
-            pass
+        import emg_reg
+        # try:
+        res = emg_reg.func_emg_reg(x, y, intercept = True, beta=beta, sigma=sigma, k=alpha)
+        # except:  # Unsafe, list which exceptions should be caught here.
+        #     pass
 
         beta = res["beta"]
         sigma = res["sigma"]
-        alpha = res["ex.rate"]
+        alpha = res["ex"]
 
     # Init
     diff = 1
@@ -250,7 +249,7 @@ def try__flare__ref(
     )
 
 
-def fun_try__flare__reg(
+def fun_try_flare_reg(
     y: npt.ArrayLike,
     x: npt.ArrayLike,
     intercept: Optional[bool] = False,
@@ -272,7 +271,7 @@ def fun_try__flare__reg(
 
     y = numpy.array(y).reshape((-1,))
 
-    return try__flare__ref(
+    return try_flare_ref(
         y=y,
         x=x,
         k=k,
@@ -288,8 +287,14 @@ def fun_try__flare__reg(
 
 
 if __name__ == "__main__":
-    import function_simulation as sim
+    import simulation as sim
 
-    N = 5000
-    data = sim.sim__emg_reg(n=N, sigma=1, alpha=0.1)
-    regfit_flare = fun_try__flare__reg(data["Y"], data["X"], maxit=10000)
+    N = 500
+    data = sim.sim_emg_reg(xmin=1, xmax=7, n=N, beta=(2, 3, 5), sigma=0.1, alpha=1)
+    # import matplotlib.pyplot as plt
+    # fig = plt.figure()
+    # axy = fig.add_subplot(111)
+    # axy.plot(data["X"], data["Y"], "ko")
+    # plt.show()
+
+    regfit_flare = fun_try_flare_reg(data["Y"], data["X"], maxit=10000)

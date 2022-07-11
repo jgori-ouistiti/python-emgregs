@@ -34,14 +34,16 @@ def exg_pdf_residuals_heterosked(
     )
 
 
-def sim__emg_reg__heterosked(
+def sim_emg_reg_heterosked(
     xmin: npt.NDArray[Any] = -2,
     xmax: npt.NDArray[Any] = 4,
+    X: npt.NDArray[Any] = None,
     n: int = 50,
     beta: Tuple[float] = (2, 3, 5),  # Or array
     sigma: float = 0.5,
     expo_scale: Tuple[float] = (1, 2, 0),
 ) -> Dict[npt.NDArray[Any], npt.NDArray[Any]]:
+    """ Scale of the exponential is expo_scale.T @ X """
 
     expo_scale = numpy.asarray(expo_scale)
     if (expo_scale * xmin <= 0).all() or (expo_scale * xmax <= 0).all():
@@ -55,9 +57,10 @@ def sim__emg_reg__heterosked(
     beta = numpy.asarray(beta).reshape(-1, 1)
     m = beta.shape[0]
 
-    X = numpy.zeros((n, m))
-    X[:, 0] = 1
-    X[:, 1:] = (xmax - xmin) * rng.random(size=(n, m - 1)) + xmin
+    if X is None:
+        X = numpy.zeros((n, m))
+        X[:, 0] = 1
+        X[:, 1:] = (xmax - xmin) * rng.random(size=(n, m - 1)) + xmin
 
     # Add EMG Noise
     E = exg_pdf_residuals_heterosked(X, shape=(n,), sigma=sigma, expo_scale=expo_scale)
@@ -67,7 +70,7 @@ def sim__emg_reg__heterosked(
     return {"X": X, "Y": Y}
 
 
-def sim__emg_reg(
+def sim_emg_reg(
     xmin: npt.NDArray[Any] = -2,
     xmax: npt.NDArray[Any] = 4,
     n: int = 50,
@@ -99,7 +102,7 @@ def sim__emg_reg(
     return {"X": X, "Y": Y}
 
 
-def sim__flare_reg(
+def sim_flare_reg(
     xmin: npt.NDArray[Any] = -2,
     xmax: npt.NDArray[Any] = 4,
     n: int = 50,
@@ -149,7 +152,7 @@ if __name__ == "__main__":
     sigma = 0.5
     alpha = 0.01
 
-    x, y = sim__emg_reg(
+    x, y = sim_emg_reg(
         xmin=xmin, xmax=xmax, n=n, beta=beta, sigma=sigma, alpha=alpha
     ).values()
     fig = plt.figure()
@@ -158,7 +161,7 @@ if __name__ == "__main__":
     axx.plot(x[:, 0], x[:, 1], "ko")
     axy.plot(range(len(y)), y, "ko")
 
-    x, y = sim__flare_reg(
+    x, y = sim_flare_reg(
         xmin=xmin, xmax=xmax, n=n, beta=beta, sigma=sigma, alpha=alpha
     ).values()
 
