@@ -37,9 +37,11 @@ flare = fun_try_flare_reg(data1["Y"], data1["X"], maxit=10000)
 
 # Model:
 
-Y = \beta X + Z
+$$Y = \beta X + Z$$
 
-For EMG, Z = E + G, where E is exponential and N is Gaussian. For flare, Z = lambda E + (1-lambda) G (mixture model)
+For EMG, Z = E + G, where E is exponential and N is Gaussian. For flare, Z = $\lambda$ E + (1-$\lambda$) G (mixture model)
+
+
 # Parameters:
 
 * xmin, xmax: domain of covariates
