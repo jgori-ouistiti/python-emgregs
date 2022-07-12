@@ -16,7 +16,7 @@ install_requires = \
 
 setup_kwargs = {
     'name': 'emgregs',
-    'version': '0.0.1',
+    'version': '0.0.3',
     'description': "Python port to Yanxi Li's R emg flare code",
     'long_description': None,
     'author': 'jgori',
