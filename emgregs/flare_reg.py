@@ -16,6 +16,7 @@ import statsmodels.api as sm
 import statsmodels.stats as sms
 import statsmodels.formula.api as smf
 
+from emgregs import emg_reg
 
 
 rng = numpy.random.default_rng(seed=123)
@@ -124,9 +125,8 @@ def try_flare_ref(
         alpha = numpy.abs(rng.normal(loc=a, size=(1,)))
 
     if emg:
-        import emg_reg
         # try:
-        res = emg_reg.func_emg_reg(x, y, intercept = True, beta=beta, sigma=sigma, k=alpha)
+        res = emg_reg(x, y, intercept = True, beta=beta, sigma=sigma, k=alpha)
         # except:  # Unsafe, list which exceptions should be caught here.
         #     pass
 
@@ -249,7 +249,7 @@ def try_flare_ref(
     )
 
 
-def fun_try_flare_reg(
+def flare_reg(
     y: npt.ArrayLike,
     x: npt.ArrayLike,
     intercept: Optional[bool] = False,
@@ -287,14 +287,14 @@ def fun_try_flare_reg(
 
 
 if __name__ == "__main__":
-    import simulation as sim
+    from emgregs import sim_flare_reg
 
     N = 500
-    data = sim.sim_emg_reg(xmin=1, xmax=7, n=N, beta=(2, 3, 5), sigma=0.1, alpha=1)
+    data = sim_flare_reg(xmin=1, xmax=7, n=N, beta=(2, 3, 5), sigma=0.1, alpha=1)
     # import matplotlib.pyplot as plt
     # fig = plt.figure()
     # axy = fig.add_subplot(111)
     # axy.plot(data["X"], data["Y"], "ko")
     # plt.show()
 
-    regfit_flare = fun_try_flare_reg(data["Y"], data["X"], maxit=10000)
+    regfit_flare = flare_reg(data["Y"], data["X"], maxit=10000)

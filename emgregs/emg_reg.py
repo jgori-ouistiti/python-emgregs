@@ -185,7 +185,7 @@ def beta_log_fn(beta, x, y, mu, sigma, k):
     return emg_neg_llh([mu, sigma, k], y - (x @ beta).squeeze())
 
 
-def emg_reg(x, y, beta=None, sigma=None, k=None, maxit=10000, epsilon=0.0001):
+def _emg_reg(x, y, beta=None, sigma=None, k=None, maxit=10000, epsilon=0.0001):
     N = y.shape[0]
     if beta is None:
         lm__out = sm.OLS(y, x)
@@ -245,7 +245,7 @@ def emg_reg(x, y, beta=None, sigma=None, k=None, maxit=10000, epsilon=0.0001):
     }
 
 
-def emg_reg_heterosked(
+def _emg_reg_heterosked(
     x, y, beta=None, sigma=None, expo_scale=None, maxit=10000, epsilon=0.0001
 ):
     N = y.shape[0]
@@ -308,7 +308,7 @@ def emg_reg_heterosked(
     }
 
 
-def func_emg_reg_heterosked(
+def emg_reg_heterosked(
     x: npt.ArrayLike,
     y: npt.ArrayLike,
     intercept: Optional[bool] = False,
@@ -319,12 +319,12 @@ def func_emg_reg_heterosked(
 ):
     if not intercept:
         x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x), axis=1)
-    return emg_reg_heterosked(
+    return _emg_reg_heterosked(
         x, y, beta=beta, sigma=sigma, expo_scale=expo_scale, **kwargs
     )
 
 
-def func_emg_reg(
+def emg_reg(
     x: npt.ArrayLike,
     y: npt.ArrayLike,
     intercept: Optional[bool] = False,
@@ -339,18 +339,17 @@ def func_emg_reg(
     k_passed = kwargs.pop("k", None)
     k = k_passed if k_passed is not None else alpha
 
-    return emg_reg(x, y, beta=beta, sigma=sigma, k=k, **kwargs)
+    return _emg_reg(x, y, beta=beta, sigma=sigma, k=k, **kwargs)
 
 
 if __name__ == "__main__":
-    import simulation as sim
-
+    from emgregs import sim_emg_reg, sim_emg_reg_heterosked
     N = 5000
-    data1 = sim.sim_emg_reg(
+    data1 = sim_emg_reg(
         xmin=1, xmax=7, n=N, beta=(0.3, 0.15), sigma=0.5, alpha=0.01
     )
-    data2 = sim.sim_emg_reg_heterosked(
+    data2 = sim_emg_reg_heterosked(
         xmin=1, xmax=7, n=N, beta=(0.3, 0.15), sigma=0.1, expo_scale=(0.1, 0.1)
     )
-    result_dict_homosked = func_emg_reg(data1["X"], data1["Y"], maxit=10000)
-    result_dict_heterosked = func_emg_reg_heterosked(data2["X"], data2["Y"], maxit=10000)
+    result_dict_homosked = emg_reg(data1["X"], data1["Y"], maxit=10000)
+    result_dict_heterosked = emg_reg_heterosked(data2["X"], data2["Y"], maxit=10000)
