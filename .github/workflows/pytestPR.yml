@@ -31,5 +31,5 @@ jobs:
           pip install -r requirements.txt
       
       - name: Run pytest
-        run: python3 -m pytest -vvv tests/
+        run: python3 -m pytest -vvv test/
 
