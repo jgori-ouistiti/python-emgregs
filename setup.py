@@ -12,11 +12,12 @@ install_requires = \
  'pandas>=1.4.2,<2.0.0',
  'scikit-learn>=1.0.2,<2.0.0',
  'scipy>=1.8.0,<2.0.0',
- 'statsmodels>=0.13.2,<0.14.0']
+ 'statsmodels>=0.13.2,<0.14.0',
+ 'tqdm>=4.64.1,<5.0.0']
 
 setup_kwargs = {
     'name': 'emgregs',
-    'version': '0.0.3',
+    'version': '0.0.4.dev0',
     'description': "Python port to Yanxi Li's R emg flare code",
     'long_description': None,
     'author': 'jgori',

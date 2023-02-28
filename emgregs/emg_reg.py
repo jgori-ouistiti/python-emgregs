@@ -318,7 +318,10 @@ def emg_reg_heterosked(
     **kwargs,
 ):
     if not intercept:
-        x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x), axis=1)
+        try:
+            x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x), axis=1)
+        except ValueError:
+            x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x.reshape(-1, 1)), axis=1)
     return _emg_reg_heterosked(
         x, y, beta=beta, sigma=sigma, expo_scale=expo_scale, **kwargs
     )
@@ -334,7 +337,10 @@ def emg_reg(
     **kwargs,
 ):
     if not intercept:
-        x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x), axis=1)
+        try:
+            x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x), axis=1)
+        except ValueError:
+            x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x.reshape(-1, 1)), axis=1)
 
     k_passed = kwargs.pop("k", None)
     k = k_passed if k_passed is not None else alpha
