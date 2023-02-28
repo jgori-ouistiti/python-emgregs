@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "emgregs"
-version = "0.0.3"
+version = "version = "0.0.3""
 description = "Python port to Yanxi Li's R emg flare code"
 authors = ["jgori <juliengori@gmail.com>"]
 
@@ -11,9 +11,12 @@ scipy = "^1.8.0"
 statsmodels = "^0.13.2"
 pandas = "^1.4.2"
 scikit-learn = "^1.0.2"
+tqdm = "^4.64.1"
 
 [tool.poetry.dev-dependencies]
 setuptools = "^59.6.0"
+pytest = "^7.2.1"
+bumpversion = "^0.6.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "setuptools>=45", "wheel", "setuptools_scm>=6.2"]
