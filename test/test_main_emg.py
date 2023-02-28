@@ -2,7 +2,7 @@ from emgregs import sim_emg_reg, sim_emg_reg_heterosked, sim_flare_reg, emg_reg,
 
 
 def test_version():
-    assert __version__ == "0.0.4-dev0"
+    assert __version__ == "0.0.4-dev1"
 
 def test():
     ## Generate data following EMG or flare model

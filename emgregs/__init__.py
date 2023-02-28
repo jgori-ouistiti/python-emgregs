@@ -1,4 +1,4 @@
-__version__ = "0.0.4-dev0"
+__version__ = "0.0.4-dev1"
 
 from emgregs.emg_reg import emg_reg, emg_reg_heterosked
 from emgregs.flare_reg import flare_reg
