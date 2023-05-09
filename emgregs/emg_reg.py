@@ -336,6 +336,10 @@ def emg_reg(
     alpha: Optional[float] = None,
     **kwargs,
 ):
+    
+    x = numpy.array(x)
+    y = numpy.array(y)
+
     if not intercept:
         try:
             x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x), axis=1)

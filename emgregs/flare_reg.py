@@ -73,7 +73,7 @@ def apply_column_sum(x):
     return numpy.sum(x, axis=0)
 
 
-def try_flare_ref(
+def _flare_reg(
     y,
     x,
     k=None,
@@ -88,8 +88,8 @@ def try_flare_ref(
 ):
 
     # Preamble
-
     x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x), axis=1)
+    
     n = len(y)
     p = x.shape[1]
 
@@ -264,14 +264,14 @@ def flare_reg(
     restart: Optional[int] = 50,
 ):
 
-    x = numpy.atleast_2d(numpy.array(x))
+    x = numpy.atleast_2d(numpy.array(x)).reshape(-1,1)
 
     if intercept:
         x = x[..., 1:]
 
     y = numpy.array(y).reshape((-1,))
 
-    return try_flare_ref(
+    return _flare_reg(
         y=y,
         x=x,
         k=k,
