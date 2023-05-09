@@ -74,8 +74,8 @@ def apply_column_sum(x):
 
 
 def _flare_reg(
-    y,
     x,
+    y,
     k=None,
     beta=None,
     sigma=None,
@@ -86,6 +86,8 @@ def _flare_reg(
     verb=False,
     restart=50,
 ):
+
+    print(x.shape)
 
     # Preamble
     x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x), axis=1)
@@ -250,8 +252,8 @@ def _flare_reg(
 
 
 def flare_reg(
-    y: npt.ArrayLike,
     x: npt.ArrayLike,
+    y: npt.ArrayLike,
     intercept: Optional[bool] = False,
     k: Optional[npt.ArrayLike] = None,
     beta: Optional[npt.ArrayLike] = None,
@@ -263,8 +265,13 @@ def flare_reg(
     verb: Optional[bool] = False,
     restart: Optional[int] = 50,
 ):
+    
+    print(x.shape)
+    print(y.shape)
 
-    x = numpy.atleast_2d(numpy.array(x)).reshape(-1,1)
+    if len(numpy.array(x).squeeze().shape) == 1:
+        x = numpy.atleast_2d(numpy.array(x)).reshape(-1,1)
+        
 
     if intercept:
         x = x[..., 1:]
@@ -272,8 +279,8 @@ def flare_reg(
     y = numpy.array(y).reshape((-1,))
 
     return _flare_reg(
-        y=y,
         x=x,
+        y=y,
         k=k,
         beta=beta,
         sigma=sigma,
@@ -297,4 +304,4 @@ if __name__ == "__main__":
     # axy.plot(data["X"], data["Y"], "ko")
     # plt.show()
 
-    regfit_flare = flare_reg(data["Y"], data["X"], maxit=10000)
+    regfit_flare = flare_reg(data["X"], data["Y"], maxit=10000)
