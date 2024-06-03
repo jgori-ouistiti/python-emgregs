@@ -35,7 +35,7 @@ def exg_pdf_residuals_heterosked(
 
 
 def sim_emg_reg_heterosked(
-    xmin: npt.NDArray[Any] = -2,
+    xmin: npt.NDArray[Any] = 0.5,
     xmax: npt.NDArray[Any] = 4,
     X: npt.NDArray[Any] = None,
     n: int = 50,
@@ -43,7 +43,7 @@ def sim_emg_reg_heterosked(
     sigma: float = 0.5,
     expo_scale: Tuple[float] = (1, 2, 0),
 ) -> Dict[npt.NDArray[Any], npt.NDArray[Any]]:
-    """ Scale of the exponential is expo_scale.T @ X """
+    """Scale of the exponential is expo_scale.T @ X"""
 
     expo_scale = numpy.asarray(expo_scale)
     if (expo_scale * xmin <= 0).all() or (expo_scale * xmax <= 0).all():
@@ -56,6 +56,12 @@ def sim_emg_reg_heterosked(
 
     beta = numpy.asarray(beta).reshape(-1, 1)
     m = beta.shape[0]
+
+    if n is None:
+        if X is None:
+            n = 50
+        else:
+            n = len(X)
 
     if X is None:
         X = numpy.zeros((n, m))
@@ -71,7 +77,7 @@ def sim_emg_reg_heterosked(
 
 
 def sim_emg_reg(
-    xmin: npt.NDArray[Any] = -2,
+    xmin: npt.NDArray[Any] = 0.5,
     xmax: npt.NDArray[Any] = 4,
     n: int = 50,
     beta: Tuple[float] = (2, 3, 5),  # Or array
@@ -90,9 +96,16 @@ def sim_emg_reg(
 
     # https://numpy.org/doc/stable/reference/random/generated/numpy.random.Generator.random.html
 
-    X = numpy.zeros((n, m))
-    X[:, 0] = 1
-    X[:, 1:] = (xmax - xmin) * rng.random(size=(n, m - 1)) + xmin
+    if n is None:
+        if X is None:
+            n = 50
+        else:
+            n = len(X)
+
+    if X is None:
+        X = numpy.zeros((n, m))
+        X[:, 0] = 1
+        X[:, 1:] = (xmax - xmin) * rng.random(size=(n, m - 1)) + xmin
 
     # Add EMG Noise
     E = exg_pdf_residuals(shape=(n,), sigma=sigma, k=alpha)
@@ -103,7 +116,7 @@ def sim_emg_reg(
 
 
 def sim_flare_reg(
-    xmin: npt.NDArray[Any] = -2,
+    xmin: npt.NDArray[Any] = 0.5,
     xmax: npt.NDArray[Any] = 4,
     n: int = 50,
     beta: Tuple[float] = (2, 3, 5),  # Or array
@@ -123,9 +136,16 @@ def sim_flare_reg(
 
     # https://numpy.org/doc/stable/reference/random/generated/numpy.random.Generator.random.html
 
-    X = numpy.zeros((n, m))
-    X[:, 0] = 1
-    X[:, 1:] = (xmax - xmin) * rng.random(size=(n, m - 1)) + xmin
+    if n is None:
+        if X is None:
+            n = 50
+        else:
+            n = len(X)
+
+    if X is None:
+        X = numpy.zeros((n, m))
+        X[:, 0] = 1
+        X[:, 1:] = (xmax - xmin) * rng.random(size=(n, m - 1)) + xmin
 
     # Add Noise mixture (flare)
     k_zero = k[0]
@@ -151,7 +171,7 @@ if __name__ == "__main__":
     beta = (2, 3, 5)
     sigma = 0.5
     alpha = 0.01
-
+    # If using a vector of input X values, it should match the size of beta. E.g. with beta = (0,1), you should use [1,x] (eg with statsmodels add_constant)
     x, y = sim_emg_reg(
         xmin=xmin, xmax=xmax, n=n, beta=beta, sigma=sigma, alpha=alpha
     ).values()
