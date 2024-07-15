@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "emgregs"
-version = "0.0.6"
+version = "0.0.7-dev0"
 description = "Python port to Yanxi Li's R emg flare code"
 authors = ["jgori <juliengori@gmail.com>"]
 
