@@ -15,6 +15,10 @@ import statsmodels.stats as sms
 import statsmodels.formula.api as smf
 
 
+from scipy.stats import exponnorm, norm, expon
+from scipy.optimize import minimize, basinhopping
+
+
 rng = numpy.random.default_rng(seed=123)
 
 
@@ -79,7 +83,7 @@ def emg_mle2(
     if start is None:
         start = [
             numpy.mean(x) - numpy.std(x) * scaled_skew,
-            numpy.sqrt(numpy.abs(numpy.std(x) ** 2 * (1 - scaled_skew ** 2))),
+            numpy.sqrt(numpy.abs(numpy.std(x) ** 2 * (1 - scaled_skew**2))),
             1 / numpy.std(x) * scaled_skew,
         ]
 
@@ -135,7 +139,7 @@ def emg_mle2_heterosked(
     if start is None:
         start = [
             numpy.mean(resid) - numpy.std(resid) * scaled_skew,
-            numpy.sqrt(numpy.abs(numpy.std(resid) ** 2 * (1 - scaled_skew ** 2))),
+            numpy.sqrt(numpy.abs(numpy.std(resid) ** 2 * (1 - scaled_skew**2))),
             1 / numpy.std(resid) * scaled_skew,
         ] + [0 for i in range(x.shape[1] - 1)]
 
@@ -170,9 +174,7 @@ def beta_log_fn_heterosked(beta, x, y, mu, sigma, expo_scale):
     y = y.reshape(
         -1,
     )
-    return emg_neg_llh_heterosked(
-        [mu, sigma, *expo_scale], y - (x @ beta).squeeze(), x
-    )
+    return emg_neg_llh_heterosked([mu, sigma, *expo_scale], y - (x @ beta).squeeze(), x)
 
 
 def beta_log_fn(beta, x, y, mu, sigma, k):
@@ -321,7 +323,9 @@ def emg_reg_heterosked(
         try:
             x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x), axis=1)
         except ValueError:
-            x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x.reshape(-1, 1)), axis=1)
+            x = numpy.concatenate(
+                (numpy.ones((x.shape[0], 1)), x.reshape(-1, 1)), axis=1
+            )
     return _emg_reg_heterosked(
         x, y, beta=beta, sigma=sigma, expo_scale=expo_scale, **kwargs
     )
@@ -336,7 +340,7 @@ def emg_reg(
     alpha: Optional[float] = None,
     **kwargs,
 ):
-    
+
     x = numpy.array(x)
     y = numpy.array(y)
 
@@ -344,7 +348,9 @@ def emg_reg(
         try:
             x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x), axis=1)
         except ValueError:
-            x = numpy.concatenate((numpy.ones((x.shape[0], 1)), x.reshape(-1, 1)), axis=1)
+            x = numpy.concatenate(
+                (numpy.ones((x.shape[0], 1)), x.reshape(-1, 1)), axis=1
+            )
 
     k_passed = kwargs.pop("k", None)
     k = k_passed if k_passed is not None else alpha
@@ -352,14 +358,123 @@ def emg_reg(
     return _emg_reg(x, y, beta=beta, sigma=sigma, k=k, **kwargs)
 
 
+#### ======== simpler functions seem to work better
+def compute_emg_regression_linear_expo_mean(x, y):
+    beta = [0, 0.1]
+    sigma = 0.01
+    expo_mean = [0.5, 0.5]
+    bounds = [(-1, 1), (0, 1), (1e-5, 1), (0, 1), (0, 5)]
+    attempts = 0
+    while attempts <= 5:
+        fit = fit_emg_arbitrary_variance_model(
+            beta, sigma, expo_mean, linear_expo_mean, x, y, bounds=bounds
+        )
+        if fit.success:
+            return fit.x, fit
+        attempts += 1
+    raise RuntimeError("fit not successful")
+
+
+def compute_gaussian_regression_linear_expo_mean(x, y):
+    beta = [0, 0.1]
+    expo_mean = [0.5, 0.5]
+    bounds = [(-1, 1), (0, 1), (0, 1), (0, 5)]
+    attempts = 0
+    while attempts <= 5:
+        fit = fit_gaussian_arbitrary_variance_model(
+            beta, expo_mean, linear_expo_mean, x, y, bounds=bounds
+        )
+        if fit.success:
+            return fit.x, fit
+        attempts += 1
+    raise RuntimeError("fit not successful")
+
+
+def minus_ll_emg_arbitrary_variance_model(params, x, y, f_expo_mean):
+    beta_params = params[:2]
+    sigma_params = params[2]
+    expo_mean_params = params[3:]
+
+    ll = 0
+
+    expo_mean = f_expo_mean(x, expo_mean_params)
+    scale = sigma_params
+    loc = beta_params[0] + beta_params[1] * x
+    K = expo_mean / (scale)
+    ll = exponnorm.logpdf(y, K, loc=loc, scale=scale)
+    return -numpy.sum(ll)
+
+
+def minus_ll_gaussian_arbitrary_variance_model(params, x, y, f_expo_mean):
+    beta_params = params[:2]
+    expo_mean_params = params[2:]
+
+    ll = 0
+
+    expo_mean = f_expo_mean(x, expo_mean_params)
+    loc = beta_params[0] + beta_params[1] * x
+    ll = norm.logpdf(y, loc=loc, scale=expo_mean)
+    return -numpy.sum(ll)
+
+
+def fit_emg_arbitrary_variance_model(beta, sigma, expo_mean, f_expo_mean, x, y, bounds):
+    x = numpy.asarray(x)
+    y = numpy.asarray(y)
+    params = [*beta, sigma, *expo_mean]
+    minimizer_kwargs = dict(method="L-BFGS-B", args=(x, y, f_expo_mean), bounds=bounds)
+    # return minimize(minus_ll_emg_arbitrary_variance_model, params, **minimizer_kwargs)
+    return basinhopping(
+        minus_ll_emg_arbitrary_variance_model,
+        params,
+        minimizer_kwargs=minimizer_kwargs,
+        niter=10,
+    )
+
+
+def fit_gaussian_arbitrary_variance_model(beta, expo_mean, f_expo_mean, x, y, bounds):
+    x = numpy.asarray(x)
+    y = numpy.asarray(y)
+    params = [*beta, *expo_mean]
+    minimizer_kwargs = dict(method="L-BFGS-B", args=(x, y, f_expo_mean), bounds=bounds)
+    # return minimize(minus_ll_emg_arbitrary_variance_model, params, **minimizer_kwargs)
+    return basinhopping(
+        minus_ll_gaussian_arbitrary_variance_model,
+        params,
+        minimizer_kwargs=minimizer_kwargs,
+        niter=10,
+    )
+
+
+##### conditional mean models ============
+def linear_expo_mean(x, params):
+    return params[0] + params[1] * x
+
+
+def constant_expo_mean(x, params):
+    return params[0]
+
+
+#####  ============
+
+
 if __name__ == "__main__":
     from emgregs import sim_emg_reg, sim_emg_reg_heterosked
+
     N = 5000
-    data1 = sim_emg_reg(
-        xmin=1, xmax=7, n=N, beta=(0.3, 0.15), sigma=0.5, alpha=0.01
-    )
+    data1 = sim_emg_reg(xmin=1, xmax=7, n=N, beta=(0.3, 0.15), sigma=0.5, alpha=0.01)
     data2 = sim_emg_reg_heterosked(
         xmin=1, xmax=7, n=N, beta=(0.3, 0.15), sigma=0.1, expo_scale=(0.1, 0.1)
     )
     result_dict_homosked = emg_reg(data1["X"], data1["Y"], maxit=10000)
     result_dict_heterosked = emg_reg_heterosked(data2["X"], data2["Y"], maxit=10000)
+
+    ## with new functions
+    x, y = data1["X"], data1["Y"]
+    X = sm.add_constant(x)
+    beta = [0, 0.1]
+    sigma = 0.1
+    expo_mean = [0, 1]
+    bounds = [(-1, 1), (0, 1), (1e-5, 1), (0, 1), (0, 5)]
+    fit = fit_emg_arbitrary_variance_model(
+        beta, sigma, expo_mean, linear_expo_mean, x, y, bounds=bounds
+    )
